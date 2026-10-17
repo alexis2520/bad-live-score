@@ -201,12 +201,12 @@ function setup(){clear();$app.replaceChildren();const p=el('div','page');p.appen
   const np=ST.t==='d'?2:1;const pl=[0,1].map(k=>{const a=[];for(let j=0;j<np;j++)a.push((ST.n[k][j]||'').trim()||('Joueur '+(k*np+j+1)));return a});
   const M={t:ST.t,title:ST.title.trim(),first:ST.first,pl,cl:ST.cl.map(x=>x.trim()),col:ST.col.slice(),log:[''],t0:Date.now()};
   mpath='matches/'+c;M.owner=uid;
-  if(db){try{await db.doc(mpath).set(M)}catch(e){alert('Création impossible. Réessaie.');return}}
+  if(db){try{await db.doc(mpath).set({...M,pl:M.pl.map(a=>JSON.stringify(a))})}catch(e){alert('Création impossible ('+(e.code||e.message)+'). Réessaie.');return}}
   S=M;openMatch(c,true)};
  const r=el('div','row');r.append(bk,go);p.append(r);$app.append(p)}
 
 function openMatch(c,scorer){clear();fsk=0;code=c;canScore=scorer;feed=[];prev=null;
- if(db){unsubs.push(db.doc(mpath).onSnapshot(s=>{if(!s.exists||canScore)return;const d=s.data();onUpdate(d);S=d;render()}));
+ if(db){unsubs.push(db.doc(mpath).onSnapshot(s=>{if(!s.exists||canScore)return;const d=s.data();d.pl=d.pl.map(x=>typeof x==='string'?JSON.parse(x):x);onUpdate(d);S=d;render()}));
   unsubs.push(db.collection('matches/'+c+'/items').orderBy('t','desc').limit(60).onSnapshot(q=>{if(fsk)q.docChanges().forEach(c=>{if(c.type==='added'){const d=c.doc.data();if(d.k==='react'&&Date.now()-d.t<15000)floatEmoji(d.x)}});fsk=1;feed=q.docs.map(d=>d.data());render()}))}
  if(S)prev=snap(S);render();const iv=setInterval(()=>{if(!S)return;document.querySelectorAll('.clk').forEach(e=>e.textContent=fmt(S))},1000);unsubs.push(()=>clearInterval(iv))}
 function onUpdate(d){if(canScore){prev=snap(d);return}const n=snap(d);if(prev){if(n.o&&!prev.o)vib([200,100,200,100,200]);else if(n.s>prev.s)vib([200,100,200]);else if(n.p>prev.p)vib(120)}prev=n}
